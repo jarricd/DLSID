@@ -1,5 +1,4 @@
-# coding=utf-8
-# Copyright 2019 The Google Research Authors.
+# Original code is by The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -159,6 +158,7 @@ def random_noise_levels():
   read_noise = tf.exp(log_read_noise)
   return shot_noise, read_noise
 
+ #rrdb as backbone
 
 def add_noise(image, shot_noise=0.01, read_noise=0.0005, amplification=1):
   """Adds random shot (proportional to image) and read (independent) noise."""
