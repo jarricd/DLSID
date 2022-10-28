@@ -1,13 +1,12 @@
-import pathlib
-import logging
-import unprocessing
-import tensorflow
-import tensorflow.keras.utils
-import cv2
-import numpy as np
+"""Perform series of degradations."""
 import argparse
+import logging
 import sys
 from pathlib import Path
+
+import degrad.degradations
+import cv2
+import degrad.unprocessing
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(description="Generate LLLR images out of target dataset.",
@@ -15,7 +14,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("dset_path", help="Path of input dataset.")
     arg_parser.add_argument("output_path", help="Path of output dataset.")
     arg_parser.add_argument("--noise_amp", help="Amplify noise by supplied factor.", default=1)
-    arg_parser.add_argument("--same_noise", help="Use the same noise pattern for every image.", default=False)
+    arg_parser.add_argument("--same_degrad", help="Use the degradation pattern for every image.", default=False)
     args = arg_parser.parse_args()
 
     dset_path_obj = Path(args.dset_path)
@@ -36,26 +35,16 @@ if __name__ == "__main__":
     img_files.extend(list(dset_path_obj.glob("*jpg")))
     img_files.extend(list(dset_path_obj.glob("*png")))
 
-    if args.same_noise:
-        shot_noise, read_noise = unprocessing.random_noise_levels()
-
     for target_img in img_files:
-        logging.info(f"Adding noise to the following file: {target_img.stem}")
-        img = cv2.imread(str(target_img))
-        if img is None:
-            logging.error("Loaded image is empty. Ensure path is correct.")
-            sys.exit(3)
+        loaded_img = cv2.imread(str(target_img))
+        intermediate_img = loaded_img.copy()
+        pipeline = [degrad.degradations.downsample, degrad.degradations.resize, degrad.unprocessing.add_noise_to_img]
+        pipeline_params = [(loaded_img, 2, False), (intermediate_img, 4, cv2.INTER_NEAREST, False), (intermediate_img, 5)
+                           ]
 
-        if not args.same_noise:
-            shot_noise, read_noise = unprocessing.random_noise_levels()
+        for pipeline_fn, params in zip(pipeline, pipeline_params):
+            intermediate_img = pipeline_fn(*params)
 
-        img = tensorflow.convert_to_tensor(img)
-        img /= 254
-        noisy = unprocessing.add_noise(img, shot_noise, read_noise,
-                                       amplification=args.noise_amp)
-        noisy *= 254
         target_path = f"{output_dset_obj}/{target_img.name}"
-        if not cv2.imwrite(target_path, noisy.eval(session=tensorflow.compat.v1.Session())):
+        if not cv2.imwrite(target_path, intermediate_img):
             logging.warning(f"Could not write {target_path} image.")
-
-    sys.exit(0)
