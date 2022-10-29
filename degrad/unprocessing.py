@@ -115,37 +115,38 @@ def mosaic(image):
 
 
 # todo play with this
-def unprocess(image):
+def unprocess(image, gains: tuple):
     """Unprocesses an image from sRGB to realistic raw data."""
     with tf.name_scope(None, 'unprocess'):
-        image.shape.assert_is_compatible_with([None, None, 3])
+        img = tf.convert_to_tensor(image)
+        img = tf.cast(img, tf.float32)
+        img.shape.assert_is_compatible_with([None, None, 3])
 
         # Randomly creates image metadata.
         rgb2cam = random_ccm()
         cam2rgb = tf.matrix_inverse(rgb2cam)
-        rgb_gain, red_gain, blue_gain = random_gains()
+        # rgb_gain, red_gain, blue_gain = random_gains()
 
         # Approximately inverts global tone mapping.
-        image = inverse_smoothstep(image)
+        img = inverse_smoothstep(img)
         # Inverts gamma compression.
-        image = gamma_expansion(image)
+        img = gamma_expansion(img)
         # Inverts color correction.
-        image = apply_ccm(image, rgb2cam)
+        img = apply_ccm(img, rgb2cam)
         # Approximately inverts white balance and brightening.
-        image = safe_invert_gains(image, rgb_gain, red_gain, blue_gain)
+        img = safe_invert_gains(img, *gains)
         # Clips saturated pixels.
-        image = tf.clip_by_value(image, 0.0, 1.0)
+        img = tf.clip_by_value(img, 0.0, 1.0)
         # Applies a Bayer mosaic.
-        image = mosaic(image)
+        img = mosaic(img)
 
         metadata = {
             'cam2rgb': cam2rgb,
-            'rgb_gain': rgb_gain,
-            'red_gain': red_gain,
-            'blue_gain': blue_gain,
+            'rgb_gain': gains[0],
+            'red_gain': gains[1],
+            'blue_gain': gains[2],
         }
-        return image, metadata
-
+        return img
 
 # TODO: PORT TO OPENCV/PYTORCH
 def random_noise_levels():
@@ -170,15 +171,13 @@ def add_noise_to_img(input_img, amplification=1):
     :return:
     """
     shot_noise, read_noise = random_noise_levels()
-    img = tf.convert_to_tensor(input_img)
-    img /= 254
-    noisy = add_noise(img, shot_noise, read_noise,
+    noisy = add_noise(input_img, shot_noise, read_noise,
                                    amplification=amplification)
-    noisy *= 254
-    return noisy.eval(session=tf.compat.v1.Session())
+
+    return noisy
 
 def add_noise(image, shot_noise=0.01, read_noise=0.0005, amplification=1):
     """Adds random shot (proportional to image) and read (independent) noise."""
     variance = image * shot_noise + read_noise
     noise = tf.random_normal(tf.shape(image), stddev=tf.sqrt(variance))
-    return (image + (noise * amplification))
+    return image + (noise * amplification)
