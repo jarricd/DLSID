@@ -171,14 +171,14 @@ def add_noise_to_img(input_img, amplification=1):
     """
     shot_noise, read_noise = random_noise_levels()
     img = tf.convert_to_tensor(input_img)
-    img /= 254
+    img = tf.cast(img, tf.float32)
     noisy = add_noise(img, shot_noise, read_noise,
                                    amplification=amplification)
-    noisy *= 254
+
     return noisy.eval(session=tf.compat.v1.Session())
 
 def add_noise(image, shot_noise=0.01, read_noise=0.0005, amplification=1):
     """Adds random shot (proportional to image) and read (independent) noise."""
     variance = image * shot_noise + read_noise
     noise = tf.random_normal(tf.shape(image), stddev=tf.sqrt(variance))
-    return (image + (noise * amplification))
+    return image + ((noise * 254) * amplification)
