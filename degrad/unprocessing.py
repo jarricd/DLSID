@@ -115,7 +115,7 @@ def mosaic(image):
 
 
 # todo play with this
-def unprocess(image, gains: tuple):
+def unprocess(image, gains: tuple, ccm):
     """Unprocesses an image from sRGB to realistic raw data."""
     with tf.name_scope(None, 'unprocess'):
         img = tf.convert_to_tensor(image)
@@ -123,8 +123,7 @@ def unprocess(image, gains: tuple):
         img.shape.assert_is_compatible_with([None, None, 3])
 
         # Randomly creates image metadata.
-        rgb2cam = random_ccm()
-        cam2rgb = tf.matrix_inverse(rgb2cam)
+        # rgb2cam = random_ccm()
         # rgb_gain, red_gain, blue_gain = random_gains()
 
         # Approximately inverts global tone mapping.
@@ -132,20 +131,20 @@ def unprocess(image, gains: tuple):
         # Inverts gamma compression.
         img = gamma_expansion(img)
         # Inverts color correction.
-        img = apply_ccm(img, rgb2cam)
+        img = apply_ccm(img, ccm)
         # Approximately inverts white balance and brightening.
-        img = safe_invert_gains(img, *gains)
+        img = safe_invert_gains(img, gains[0], gains[1], gains[2])
         # Clips saturated pixels.
         img = tf.clip_by_value(img, 0.0, 1.0)
         # Applies a Bayer mosaic.
         img = mosaic(img)
 
-        metadata = {
-            'cam2rgb': cam2rgb,
-            'rgb_gain': gains[0],
-            'red_gain': gains[1],
-            'blue_gain': gains[2],
-        }
+        # metadata = {
+        #     'cam2rgb': cam2rgb,
+        #     'rgb_gain': gains[0],
+        #     'red_gain': gains[1],
+        #     'blue_gain': gains[2],
+        # }
         return img
 
 # TODO: PORT TO OPENCV/PYTORCH

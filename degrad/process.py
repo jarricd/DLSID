@@ -28,16 +28,16 @@ import tensorflow as tf
 
 def apply_gains(bayer_images, red_gains, blue_gains):
   """Applies white balance gains to a batch of Bayer images."""
-  bayer_images.shape.assert_is_compatible_with((None, None, None, 4))
+  # bayer_images.shape.assert_is_compatible_with((None, None, None, 4))
   green_gains = tf.ones_like(red_gains)
   gains = tf.stack([red_gains, green_gains, green_gains, blue_gains], axis=-1)
-  gains = gains[:, tf.newaxis, tf.newaxis, :]
+  # gains = gains[:, tf.newaxis, tf.newaxis, :]
   return bayer_images * gains
 
 
 def demosaic(bayer_images):
   """Bilinearly demosaics a batch of RGGB Bayer images."""
-  bayer_images.shape.assert_is_compatible_with((None, None, None, 4))
+  # bayer_images.shape.assert_is_compatible_with((None, None, None, 4))
 
   # This implementation exploits how edges are aligned when upsampling with
   # tf.image.resize_bilinear().
@@ -46,32 +46,32 @@ def demosaic(bayer_images):
     shape = tf.shape(bayer_images)
     shape = [shape[1] * 2, shape[2] * 2]
 
-    red = bayer_images[Ellipsis, 0:1]
+    red = bayer_images[..., 0:1]
     red = tf.image.resize_bilinear(red, shape)
 
-    green_red = bayer_images[Ellipsis, 1:2]
+    green_red = bayer_images[..., 1:2]
     green_red = tf.image.flip_left_right(green_red)
     green_red = tf.image.resize_bilinear(green_red, shape)
     green_red = tf.image.flip_left_right(green_red)
     green_red = tf.space_to_depth(green_red, 2)
 
-    green_blue = bayer_images[Ellipsis, 2:3]
+    green_blue = bayer_images[..., 2:3]
     green_blue = tf.image.flip_up_down(green_blue)
     green_blue = tf.image.resize_bilinear(green_blue, shape)
     green_blue = tf.image.flip_up_down(green_blue)
     green_blue = tf.space_to_depth(green_blue, 2)
 
-    green_at_red = (green_red[Ellipsis, 0] + green_blue[Ellipsis, 0]) / 2
-    green_at_green_red = green_red[Ellipsis, 1]
-    green_at_green_blue = green_blue[Ellipsis, 2]
-    green_at_blue = (green_red[Ellipsis, 3] + green_blue[Ellipsis, 3]) / 2
+    green_at_red = (green_red[..., 0] + green_blue[..., 0]) / 2
+    green_at_green_red = green_red[..., 1]
+    green_at_green_blue = green_blue[..., 2]
+    green_at_blue = (green_red[..., 3] + green_blue[..., 3]) / 2
 
     green_planes = [
         green_at_red, green_at_green_red, green_at_green_blue, green_at_blue
     ]
     green = tf.depth_to_space(tf.stack(green_planes, axis=-1), 2)
 
-    blue = bayer_images[Ellipsis, 3:4]
+    blue = bayer_images[..., 3:4]
     blue = tf.image.flip_up_down(tf.image.flip_left_right(blue))
     blue = tf.image.resize_bilinear(blue, shape)
     blue = tf.image.flip_up_down(tf.image.flip_left_right(blue))
@@ -96,7 +96,7 @@ def gamma_compression(images, gamma=2.2):
 
 def process(bayer_images, red_gains, blue_gains, cam2rgbs):
   """Processes a batch of Bayer RGGB images into sRGB images."""
-  bayer_images.shape.assert_is_compatible_with((None, None, None, 4))
+  # bayer_images.shape.assert_is_compatible_with((None, None, None, 4))
   with tf.name_scope(None, 'process'):
     # White balance.
     bayer_images = apply_gains(bayer_images, red_gains, blue_gains)

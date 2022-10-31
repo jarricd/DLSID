@@ -1,9 +1,11 @@
 """Special thanks to BSRGAN authors for practical degradation pipeline. https://github.com/cszn"""
 from random import random
+from scipy.linalg import orth
 
 import cv2
 import logging
-import tensorflow as tf
+import numpy as np
+import random
 
 def downsample(input_img, factor, retain_size=True) -> cv2.Mat:
     """
@@ -85,10 +87,58 @@ def blur(*args) -> cv2.Mat:
     return blurred
 
 
-def reverse_isp_add_noise(input_img) -> cv2.Mat:
-    """Add noise to an image using reverse ISP pipeline and reprocess the image to RGB again."""
-    if input_img is None:
-        msg = "Input image for blur cannot be empty."
+def add_poisson_noise(img):
+    """
+    Add poisson noise to img.
+
+    :param img:
+    :return:
+    """
+    if img is None:
+        msg = "Input image for noise cannot be empty."
         logging.error(msg)
         raise ValueError(msg)
 
+    img = img / 255  # convert to float
+    vals = np.power(10, (2*random.random()+2.0))
+    img = (np.random.poisson(img * vals).astype(np.float32) / vals) * 255  # rescale to int again
+    img = img.astype(np.uint8)
+    return img
+
+
+def add_speckle_noise(img,  lower_level=2, upper_level=25):
+    # speckle noise is like gauss noise except is black and white
+    noise_level = random.randint(lower_level, upper_level)
+    img = img / 255
+    img = np.clip(img, 0.0, 1.0)
+    rnum = random.random()
+    if rnum > 0.6:
+        img += img*np.random.normal(0, noise_level/255.0, img.shape).astype(np.float32)
+    elif rnum < 0.4:
+        img += img*np.random.normal(0, noise_level/255.0, (*img.shape[:2], 1)).astype(np.float32)
+    else:
+        L = upper_level/255.
+        D = np.diag(np.random.rand(3))
+        U = orth(np.random.rand(3,3))
+        conv = np.dot(np.dot(np.transpose(U), D), U)
+        img += img*np.random.multivariate_normal([0,0,0], np.abs(L**2*conv), img.shape[:2]).astype(np.float32)
+    img = np.clip(img, 0.0, 1.0)
+    return (img * 255).astype(np.uint8)
+
+
+def add_gauss_noise(img, lower_level=2, upper_level=25):
+    noise_level = random.randint(lower_level, upper_level)
+    img = img / 255
+    rnum = np.random.rand()
+    if rnum > 0.6:   # add color Gaussian noise
+        img += np.random.normal(0, noise_level/255.0, img.shape).astype(np.float32)
+    elif rnum < 0.4: # add grayscale Gaussian noise
+        img += np.random.normal(0, noise_level/255.0, (*img.shape[:2], 1)).astype(np.float32)
+    else:            # add  noise
+        L = upper_level/255.
+        D = np.diag(np.random.rand(3))
+        U = orth(np.random.rand(3,3))
+        conv = np.dot(np.dot(np.transpose(U), D), U)
+        img += np.random.multivariate_normal([0,0,0], np.abs(L**2*conv), img.shape[:2]).astype(np.float32)
+    img = np.clip(img, 0.0, 1.0)
+    return img
