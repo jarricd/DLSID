@@ -141,4 +141,18 @@ def add_gauss_noise(img, lower_level=2, upper_level=25):
         conv = np.dot(np.dot(np.transpose(U), D), U)
         img += np.random.multivariate_normal([0,0,0], np.abs(L**2*conv), img.shape[:2]).astype(np.float32)
     img = np.clip(img, 0.0, 1.0)
+    return (img * 255).astype(np.uint8)
+
+def add_jpeg_noise(img):
+    quality_factor = random.randint(10, 95)
+    result, encimg = cv2.imencode('.jpg', img, [int(cv2.IMWRITE_JPEG_QUALITY), quality_factor])
+    img = cv2.imdecode(encimg, 1)
     return img
+
+def add_webp_noise(img):
+    quality_factor = random.randint(10, 95)
+    result, encimg = cv2.imencode('.webp', img, [int(cv2.IMWRITE_WEBP_QUALITY), quality_factor])
+    img = cv2.imdecode(encimg, 1)
+    return img
+
+

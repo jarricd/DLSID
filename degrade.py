@@ -1,13 +1,15 @@
 """Perform series of degradations."""
 import argparse
 import logging
+import pathlib
 import sys
 from pathlib import Path
 
 import degrad.degradations
 import cv2
 import degrad.unprocessing
-
+import degrad.process
+import tensorflow as tf
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(description="Generate LLLR images out of target dataset.",
                                          epilog="This program does not have supercow powers.")
@@ -32,19 +34,27 @@ if __name__ == "__main__":
         logging.error("Provided output path is not a directory. Exiting.")
         sys.exit(2)
 
-    img_files.extend(list(dset_path_obj.glob("*jpg")))
-    img_files.extend(list(dset_path_obj.glob("*png")))
-
-    for target_img in img_files:
-        loaded_img = cv2.imread(str(target_img))
-        intermediate_img = loaded_img.copy()
-        pipeline = [degrad.degradations.downsample, degrad.degradations.resize, degrad.unprocessing.add_noise_to_img]
-        pipeline_params = [(loaded_img, 2, False), (intermediate_img, 4, cv2.INTER_NEAREST, False), (intermediate_img, 5)
-                           ]
-
-        for pipeline_fn, params in zip(pipeline, pipeline_params):
-            intermediate_img = pipeline_fn(*params)
-
-        target_path = f"{output_dset_obj}/{target_img.name}"
-        if not cv2.imwrite(target_path, intermediate_img):
-            logging.warning(f"Could not write {target_path} image.")
+    # img_files.extend(list(dset_path_obj.glob("*jpg")))
+    # img_files.extend(list(dset_path_obj.glob("*png")))
+    img_files = [pathlib.Path("00001.png")]
+    loaded_img = cv2.imread(str(img_files[0]))
+    original = loaded_img.copy()
+    # loaded_img = degrad.degradations.add_poisson_noise(loaded_img)
+    # loaded_img = degrad.degradations.add_speckle_noise(loaded_img, 2, 25)
+    # loaded_img = degrad.degradations.add_gauss_noise(loaded_img, 2, 25)
+    loaded_img_jpeg = degrad.degradations.add_jpeg_noise(loaded_img.copy())
+    loaded_img = degrad.degradations.add_webp_noise(loaded_img)
+    cv2.imshow("img", loaded_img)
+    cv2.imshow("img1", loaded_img_jpeg)
+    cv2.imshow("img2", original)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    # for target_img in img_files:
+    #     pipeline = []
+    #     pipeline_params = []
+    #
+    #
+    #
+    #     target_path = f"{output_dset_obj}/{target_img.name}"
+    #     if not cv2.imwrite(target_path, output_img):
+    #         logging.warning(f"Could not write {target_path} image.")
