@@ -1,11 +1,11 @@
 """Special thanks to BSRGAN authors for practical degradation pipeline. https://github.com/cszn"""
 from random import random
 from scipy.linalg import orth
-
 import cv2
 import logging
 import numpy as np
 import random
+
 
 def downsample(input_img, factor, retain_size=True) -> cv2.Mat:
     """
@@ -51,7 +51,7 @@ def resize(input_img, factor, interpolation=cv2.INTER_NEAREST, retain_size=True)
     return resized
 
 
-def blur(*args) -> cv2.Mat:
+def blur(input_img, kernel_size, blur_type) -> cv2.Mat:
     """
     Blur image.
     NOTE: Median blur accepts only a square kernel, only x from kernel_size tuple will be considered.
@@ -63,27 +63,31 @@ def blur(*args) -> cv2.Mat:
     :param rest: Refer to specific blur docs, stuff like sigma
     :return: Blurred image.
     """
-    if args[0] is None:
+    if input_img[0] is None:
         msg = "Input image for blur cannot be empty."
         logging.error(msg)
         raise ValueError(msg)
 
-    if args[1][0] <= 0 or args[1][1] <= 0:
+    if kernel_size[0] <= 0 or kernel_size[1] <= 0:
         msg = "Kernel size cannot be < 0."
         logging.error(msg)
         raise ValueError(msg)
 
-    blur_lut = {"block": cv2.blur, "gauss": cv2.GaussianBlur, "median": cv2.medianBlur, "bilat": cv2.bilateralFilter}
-    try:
-        blur_fn = blur_lut[args[2]]
-    except KeyError as e:
-        msg = f"{args[2]} is not a valid blur. Valid choices are {list(blur_lut.keys())}."
+    if blur_type == "avg":
+        blurred = cv2.blur(input_img, kernel_size)
+    elif blur_type == "gauss":
+        sigma_x = random.uniform(0, 10)
+        blurred = cv2.GaussianBlur(input_img, kernel_size, sigma_x)
+    elif blur_type == "median":
+        blurred = cv2.medianBlur(input_img, kernel_size[0])
+    elif blur_type == "bilat":
+        sigma = random.randint(10, 250)
+        blurred = cv2.bilateralFilter(input_img, -1, sigma, kernel_size[0])
+    else:
+        msg = f"Unknown filter type: {blur_type}"
         logging.error(msg)
-        raise Exception(msg) from e
+        raise ValueError(msg)
 
-    # reconstruct args without the blur type string
-    reconstructed_args = tuple((item for item in args if type(item) is not str))
-    blurred = blur_fn(*reconstructed_args)
     return blurred
 
 
