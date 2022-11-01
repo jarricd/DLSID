@@ -1,0 +1,3 @@
+[submodule "LEDNet"]
+	path = LEDNet
+	url = https://github.com/sczhou/LEDNet.git
