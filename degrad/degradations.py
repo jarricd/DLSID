@@ -5,7 +5,7 @@ import cv2
 import logging
 import numpy as np
 import random
-
+import torch
 
 def downsample(input_img, factor, retain_size=True) -> cv2.Mat:
     """
@@ -160,3 +160,31 @@ def add_webp_noise(img):
     return img
 
 
+def zero_dce_exposure(net, target_img, target_exposure, threshold=0.97):
+    """
+    Lower exposure via CE-ZeroDCE NN.
+
+    :param net:
+    :param threshold:
+    :param target_img:
+    :param target_exposure:
+    :return:
+    """
+    target_img = target_img.astype('float32') / 255.0
+    h, w, _ = target_img.shape
+    img_lab = cv2.cvtColor(target_img, cv2.COLOR_RGB2LAB)
+    l_channel, a_channel, b_channel = cv2.split(img_lab)
+    # 0<=L<=100, -127<=a<=127, -127<=b<=127
+    l_channel_t = torch.from_numpy(l_channel).view(1, 1, h, w).cuda()
+    l_channel_f = l_channel_t / 100.0
+    exp_map = target_exposure * torch.ones_like(l_channel_f)
+    stuated_map = (l_channel_f > threshold).int()
+    exp_map = exp_map * (1 - stuated_map) + l_channel_f * stuated_map
+    with torch.no_grad():
+        low_light_l = (net(l_channel_f, exp_map) * 100).squeeze().cpu().detach().numpy()
+    torch.cuda.empty_cache()
+    scale = low_light_l / (l_channel + 1e-8)
+    scale = np.dstack([scale] * 3)
+    low_light_img = target_img * scale * 255
+    img_out = low_light_img.clip(0, 255).astype('uint8')
+    return img_out

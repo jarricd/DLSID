@@ -1,4 +1,2 @@
-tensorflow==1.15.5
 Pillow
-protobuf==3.20.0
 opencv-python
