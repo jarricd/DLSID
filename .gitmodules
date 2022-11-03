@@ -1,3 +1,6 @@
 [submodule "LEDNet"]
 	path = LEDNet
 	url = https://github.com/sczhou/LEDNet.git
+[submodule "IQA-PyTorch"]
+	path = IQA-PyTorch
+	url = https://github.com/chaofengc/IQA-PyTorch.git
