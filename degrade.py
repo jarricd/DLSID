@@ -1,14 +1,16 @@
 """Perform series of degradations."""
 import argparse
 import logging
-
 import cv2
 import degrad.degradations
 import random
 import sys
+import torch
+import quality.calculate
+
 from pathlib import Path
 from basicsr.archs.zerodce_arch import ConditionZeroDCE
-import torch
+
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(description="Generate LLLR images out of target dataset.",
@@ -43,9 +45,12 @@ if __name__ == "__main__":
 
     # prep CE-ZeroDCE
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    net = ConditionZeroDCE().to(device)
     ckpt_path = args.zero_dce_pth
-    checkpoint = torch.load(ckpt_path)
+    net = ConditionZeroDCE().to(device)
+    if str(device) == "cpu":
+        checkpoint = torch.load(ckpt_path, map_location=torch.device("cpu"))
+    else:
+        checkpoint = torch.load(ckpt_path)
     net.load_state_dict(checkpoint)
     net.eval()
 
@@ -54,7 +59,8 @@ if __name__ == "__main__":
         exp_range = [0.1, 0.3]
         target_exposure = random.uniform(*exp_range)
         loaded_img = cv2.imread(str(target_img))
-        loaded_img = degrad.degradations.zero_dce_exposure(net, loaded_img, target_exposure)
+        original_img = loaded_img.copy()
+        loaded_img = degrad.degradations.zero_dce_exposure(net, loaded_img, target_exposure, device)
         for _ in range(0, degrad_count):
             selected_degrad = random.randint(0, 7)
             if selected_degrad == 0:
@@ -85,3 +91,11 @@ if __name__ == "__main__":
         target_path = f"{output_dset_obj}/{target_img.name}"
         if not cv2.imwrite(target_path, loaded_img):
             logging.warning(f"Could not write {target_path} image.")
+
+        print("Calculating PSNR.")
+        psnr_score = quality.calculate.calculate_psnr(original_img, loaded_img)
+        print(f"PSNR score between original and degraded: {psnr_score}")
+        print("Calculating PSNR.")
+        ssim_score = quality.calculate.calculate_ssim(original_img, loaded_img)
+        print(f"PSNR score between original and degraded: {ssim_score}")
+        break
