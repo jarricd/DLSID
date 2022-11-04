@@ -160,7 +160,7 @@ def add_webp_noise(img):
     return img
 
 
-def zero_dce_exposure(net, target_img, target_exposure, threshold=0.97):
+def zero_dce_exposure(net, target_img, target_exposure, device, threshold=0.97):
     """
     Lower exposure via CE-ZeroDCE NN.
 
@@ -175,7 +175,7 @@ def zero_dce_exposure(net, target_img, target_exposure, threshold=0.97):
     img_lab = cv2.cvtColor(target_img, cv2.COLOR_RGB2LAB)
     l_channel, a_channel, b_channel = cv2.split(img_lab)
     # 0<=L<=100, -127<=a<=127, -127<=b<=127
-    l_channel_t = torch.from_numpy(l_channel).view(1, 1, h, w).cuda()
+    l_channel_t = torch.from_numpy(l_channel).view(1, 1, h, w).to(device)
     l_channel_f = l_channel_t / 100.0
     exp_map = target_exposure * torch.ones_like(l_channel_f)
     stuated_map = (l_channel_f > threshold).int()
