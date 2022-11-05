@@ -91,7 +91,7 @@ def blur(input_img, kernel_size, blur_type) -> cv2.Mat:
     return blurred
 
 
-def add_poisson_noise(img):
+def add_poisson_noise(img, amp_factor=1):
     """
     Add poisson noise to img.
 
@@ -104,7 +104,7 @@ def add_poisson_noise(img):
         raise ValueError(msg)
 
     img = img / 255  # convert to float
-    vals = np.power(10, (2*random.random()+2.0))
+    vals = np.power(10, amp_factor*random.random())
     img = (np.random.poisson(img * vals).astype(np.float32) / vals) * 255  # rescale to int again
     img = img.astype(np.uint8)
     return img
