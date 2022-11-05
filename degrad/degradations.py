@@ -104,10 +104,11 @@ def add_poisson_noise(img, amp_factor=1):
         raise ValueError(msg)
 
     img = img / 255  # convert to float
-    vals = np.power(10, amp_factor*random.random())
+    poisson_seed = random.random()
+    vals = np.power(10, amp_factor*poisson_seed)
     img = (np.random.poisson(img * vals).astype(np.float32) / vals) * 255  # rescale to int again
     img = img.astype(np.uint8)
-    return img
+    return img, poisson_seed
 
 
 def add_speckle_noise(img,  lower_level=2, upper_level=25):
@@ -151,13 +152,13 @@ def add_jpeg_noise(img):
     quality_factor = random.randint(10, 95)
     result, encimg = cv2.imencode('.jpg', img, [int(cv2.IMWRITE_JPEG_QUALITY), quality_factor])
     img = cv2.imdecode(encimg, 1)
-    return img
+    return img, quality_factor
 
 def add_webp_noise(img):
     quality_factor = random.randint(10, 95)
     result, encimg = cv2.imencode('.webp', img, [int(cv2.IMWRITE_WEBP_QUALITY), quality_factor])
     img = cv2.imdecode(encimg, 1)
-    return img
+    return img, quality_factor
 
 
 def zero_dce_exposure(net, target_img, target_exposure, device, threshold=0.97):
