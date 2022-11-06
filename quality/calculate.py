@@ -3,6 +3,7 @@ import math
 import logging
 import cv2
 from sklearn.metrics import mean_squared_error
+
 def psnr(original_img, modified_img):
     """
     Calculate PSNR between original and modified img.
@@ -60,7 +61,7 @@ def ssim(original_image, modified_image):
 
     ssim_map = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / ((mu1_sq + mu2_sq + C1) *
                                                             (sigma1_sq + sigma2_sq + C2))
-    return  np.round(ssim_map.mean(), 4)
+    return np.round(ssim_map.mean(), 4)
 
 
 # def calculate_mssim(original_img, modified_img) -> float:

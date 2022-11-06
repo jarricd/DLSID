@@ -75,7 +75,7 @@ if __name__ == "__main__":
         degraded_img = cv2.imread(str(target_img))
         original_img = degraded_img.copy()
         degraded_img = degrad.degradations.zero_dce_exposure(net, degraded_img, target_exposure, device)
-        applied_degradations.update({degradations_lut[0]: {"exposure_decrease": target_exposure}})
+        applied_degradations.update({degradations_lut[0]: {"exposure_decrease": target_exposure, "threshold": 0.97}})
         for iterations in range(0, degrad_count):
             selected_degrad = random.randint(0, 7)
             if selected_degrad == 0:
@@ -84,13 +84,13 @@ if __name__ == "__main__":
             elif selected_degrad == 1:
                 low_lvl = random.randint(2, 5)
                 upper_lvl = random.randint(10, 25)
-                degraded_img = degrad.degradations.add_speckle_noise(degraded_img, low_lvl, upper_lvl)
-                applied_degradations.update({"speckle_noise": {"low_lvl": low_lvl, "upper_lvl": upper_lvl}})
+                degraded_img, rnum, seed = degrad.degradations.add_speckle_noise(degraded_img, low_lvl, upper_lvl)
+                applied_degradations.update({"speckle_noise": {"low_lvl": low_lvl, "upper_lvl": upper_lvl, "rnum": rnum, "seed": seed}})
             elif selected_degrad == 2:
                 low_lvl = random.randint(2, 5)
                 upper_lvl = random.randint(10, 25)
-                degraded_img = degrad.degradations.add_gauss_noise(degraded_img, low_lvl, upper_lvl)
-                applied_degradations.update({"gauss_noise": {"low_lvl": low_lvl, "upper_lvl": upper_lvl}})
+                degraded_img, rnum, seed = degrad.degradations.add_gauss_noise(degraded_img, low_lvl, upper_lvl)
+                applied_degradations.update({"gauss_noise": {"low_lvl": low_lvl, "upper_lvl": upper_lvl, "rnum": rnum, "seed": seed}})
             elif selected_degrad == 3 and target_img.suffix != ".jpg":  # no point adding more jpeg noise to a jpeg img
                 degraded_img, quality_comp = degrad.degradations.add_jpeg_noise(degraded_img)
                 applied_degradations.update({"jpeg_noise": {"quality": quality_comp}})

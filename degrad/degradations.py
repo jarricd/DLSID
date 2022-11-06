@@ -118,17 +118,20 @@ def add_speckle_noise(img,  lower_level=2, upper_level=25):
     img = np.clip(img, 0.0, 1.0)
     rnum = random.random()
     if rnum > 0.6:
-        img += img*np.random.normal(0, noise_level/255.0, img.shape).astype(np.float32)
+        seed = np.random.normal(0, noise_level/255.0, img.shape).astype(np.float32)
+        img += img*seed
     elif rnum < 0.4:
-        img += img*np.random.normal(0, noise_level/255.0, (*img.shape[:2], 1)).astype(np.float32)
+        seed = np.random.normal(0, noise_level/255.0, (*img.shape[:2], 1)).astype(np.float32)
+        img += img * seed
     else:
         L = upper_level/255.
         D = np.diag(np.random.rand(3))
         U = orth(np.random.rand(3,3))
         conv = np.dot(np.dot(np.transpose(U), D), U)
-        img += img*np.random.multivariate_normal([0,0,0], np.abs(L**2*conv), img.shape[:2]).astype(np.float32)
+        seed = np.random.multivariate_normal([0,0,0], np.abs(L**2*conv), img.shape[:2]).astype(np.float32)
+        img += img*seed
     img = np.clip(img, 0.0, 1.0)
-    return (img * 255).astype(np.uint8)
+    return (img * 255).astype(np.uint8), rnum, seed
 
 
 def add_gauss_noise(img, lower_level=2, upper_level=25):
@@ -136,17 +139,20 @@ def add_gauss_noise(img, lower_level=2, upper_level=25):
     img = img / 255
     rnum = np.random.rand()
     if rnum > 0.6:   # add color Gaussian noise
-        img += np.random.normal(0, noise_level/255.0, img.shape).astype(np.float32)
+        seed = np.random.normal(0, noise_level / 255.0, img.shape).astype(np.float32)
+        img += img * seed
     elif rnum < 0.4: # add grayscale Gaussian noise
-        img += np.random.normal(0, noise_level/255.0, (*img.shape[:2], 1)).astype(np.float32)
+        seed = np.random.normal(0, noise_level / 255.0, (*img.shape[:2], 1)).astype(np.float32)
+        img += img * seed
     else:            # add  noise
         L = upper_level/255.
         D = np.diag(np.random.rand(3))
         U = orth(np.random.rand(3,3))
         conv = np.dot(np.dot(np.transpose(U), D), U)
-        img += np.random.multivariate_normal([0,0,0], np.abs(L**2*conv), img.shape[:2]).astype(np.float32)
+        seed = np.random.multivariate_normal([0,0,0], np.abs(L**2*conv), img.shape[:2]).astype(np.float32)
+        img += seed
     img = np.clip(img, 0.0, 1.0)
-    return (img * 255).astype(np.uint8)
+    return (img * 255).astype(np.uint8), rnum, seed
 
 def add_jpeg_noise(img):
     quality_factor = random.randint(10, 95)
