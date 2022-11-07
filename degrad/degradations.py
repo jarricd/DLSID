@@ -140,10 +140,10 @@ def add_gauss_noise(img, lower_level=2, upper_level=25):
     rnum = np.random.rand()
     if rnum > 0.6:   # add color Gaussian noise
         seed = np.random.normal(0, noise_level / 255.0, img.shape).astype(np.float32)
-        img += img * seed
+        img += seed
     elif rnum < 0.4: # add grayscale Gaussian noise
         seed = np.random.normal(0, noise_level / 255.0, (*img.shape[:2], 1)).astype(np.float32)
-        img += img * seed
+        img += seed
     else:            # add  noise
         L = upper_level/255.
         D = np.diag(np.random.rand(3))
