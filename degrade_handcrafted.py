@@ -13,7 +13,8 @@ from basicsr.archs.zerodce_arch import ConditionZeroDCE
 
 
 if __name__ == "__main__":
-    arg_parser = argparse.ArgumentParser(description="Generate LLLR images out of target dataset.",
+    random.seed(0)
+    arg_parser = argparse.ArgumentParser(description="Generate LLLR images out of target dataset. This is the handcrafted model",
                                          epilog="This program does not have supercow powers.")
     arg_parser.add_argument("dset_path", help="Path of input dataset.")
     arg_parser.add_argument("output_path", help="Path of output dataset.")
@@ -55,27 +56,16 @@ if __name__ == "__main__":
     net.eval()
 
     scores = {}
-    degradations_lut = {
-        0: "exposure_decrease",
-        1: "poisson_noise",
-        2: "speckle_noise",
-        3: "gauss_noise",
-        4: "add_jpeg_noise",
-        5: "add_webp_noise",
-        6: "downsample",
-        7: "resize",
-        8: "blur"
-    }
-
     for inter_num, target_img in enumerate(img_files):
         print(f"Degrading img {target_img}")
-        exp_range = [0.1, 0.5]
+        exp_factor = (0.1, 0.9)
         applied_degradations = {}
-        target_exposure = random.uniform(*exp_range)
+        target_exposure = random.uniform(*exp_factor)
         degraded_img = cv2.imread(str(target_img))
         original_img = degraded_img.copy()
-        degraded_img = degrad.degradations.zero_dce_exposure(net, degraded_img, target_exposure, device)
-        applied_degradations.update({degradations_lut[0]: {"exposure_decrease": target_exposure, "threshold": 0.97}})
+        degraded_img = degrad.degradations.change_brightness(degraded_img, target_exposure)
+        applied_degradations.update({"exposure_decrease": target_exposure})
+
         for iterations in range(0, degrad_count):
             selected_degrad = random.randint(0, 7)
             if selected_degrad == 0:
@@ -85,12 +75,12 @@ if __name__ == "__main__":
                 low_lvl = random.randint(2, 5)
                 upper_lvl = random.randint(10, 25)
                 degraded_img, rnum, seed = degrad.degradations.add_speckle_noise(degraded_img, low_lvl, upper_lvl)
-                applied_degradations.update({"speckle_noise": {"low_lvl": low_lvl, "upper_lvl": upper_lvl, "rnum": rnum, "seed": seed}})
+                applied_degradations.update({"speckle_noise": {"low_lvl": low_lvl, "upper_lvl": upper_lvl, "rnum": rnum}})
             elif selected_degrad == 2:
                 low_lvl = random.randint(2, 5)
                 upper_lvl = random.randint(10, 25)
                 degraded_img, rnum, seed = degrad.degradations.add_gauss_noise(degraded_img, low_lvl, upper_lvl)
-                applied_degradations.update({"gauss_noise": {"low_lvl": low_lvl, "upper_lvl": upper_lvl, "rnum": rnum, "seed": seed}})
+                applied_degradations.update({"gauss_noise": {"low_lvl": low_lvl, "upper_lvl": upper_lvl, "rnum": rnum}})
             elif selected_degrad == 3 and target_img.suffix != ".jpg":  # no point adding more jpeg noise to a jpeg img
                 degraded_img, quality_comp = degrad.degradations.add_jpeg_noise(degraded_img)
                 applied_degradations.update({"jpeg_noise": {"quality": quality_comp}})
@@ -122,7 +112,7 @@ if __name__ == "__main__":
         ssim_score = quality.calculate.ssim(original_img, degraded_img)
         print(f"SSIM score between original and degraded: {ssim_score}")
         scores.update({str(target_img): {"ssim": ssim_score, "psnr": psnr_score, "degradations": applied_degradations}})
-        if inter_num > 100:
+        if inter_num > 5:
             break
 
     output_json = json.dumps(scores)

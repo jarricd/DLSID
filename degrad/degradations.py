@@ -7,6 +7,7 @@ import numpy as np
 import random
 import torch
 
+
 def downsample(input_img, factor, retain_size=True) -> cv2.Mat:
     """
     Downsample target image.
@@ -23,7 +24,8 @@ def downsample(input_img, factor, retain_size=True) -> cv2.Mat:
 
     downsampled = cv2.pyrDown(input_img, dstsize=(input_img.shape[1] // factor, input_img.shape[0] // factor))
     if retain_size:
-        downsampled_retained = cv2.pyrUp(downsampled, dstsize=(factor * downsampled.shape[0], factor * downsampled.shape[1]))
+        downsampled_retained = cv2.pyrUp(downsampled,
+                                         dstsize=(factor * downsampled.shape[0], factor * downsampled.shape[1]))
         return downsampled_retained
     return downsampled
 
@@ -43,10 +45,11 @@ def resize(input_img, factor, interpolation=cv2.INTER_NEAREST, retain_size=True)
         logging.error(msg)
         raise ValueError(msg)
 
-    resized = cv2.resize(input_img, (input_img.shape[1] // factor, input_img.shape[0] // factor), interpolation=interpolation)
+    resized = cv2.resize(input_img, (input_img.shape[1] // factor, input_img.shape[0] // factor),
+                         interpolation=interpolation)
     if retain_size:
         resized_retained = cv2.resize(resized, (resized.shape[1] * factor, resized.shape[0] * factor),
-                             interpolation=interpolation)
+                                      interpolation=interpolation)
         return resized_retained
     return resized
 
@@ -73,6 +76,7 @@ def blur(input_img, kernel_size, blur_type) -> cv2.Mat:
         logging.error(msg)
         raise ValueError(msg)
 
+    input_img = input_img.astype("uint8")
     if blur_type == "avg":
         blurred = cv2.blur(input_img, kernel_size)
     elif blur_type == "gauss":
@@ -105,31 +109,31 @@ def add_poisson_noise(img, amp_factor=1):
 
     img = img / 255  # convert to float
     poisson_seed = random.random()
-    vals = np.power(10, amp_factor*poisson_seed)
+    vals = np.power(10, amp_factor * poisson_seed)
     img = (np.random.poisson(img * vals).astype(np.float32) / vals) * 255  # rescale to int again
     img = img.astype(np.uint8)
     return img, poisson_seed
 
 
-def add_speckle_noise(img,  lower_level=2, upper_level=25):
+def add_speckle_noise(img, lower_level=2, upper_level=25):
     # speckle noise is like gauss noise except is black and white
     noise_level = random.randint(lower_level, upper_level)
     img = img / 255
     img = np.clip(img, 0.0, 1.0)
     rnum = random.random()
     if rnum > 0.6:
-        seed = np.random.normal(0, noise_level/255.0, img.shape).astype(np.float32)
-        img += img*seed
+        seed = np.random.normal(0, noise_level / 255.0, img.shape).astype(np.float32)
+        img += img * seed
     elif rnum < 0.4:
-        seed = np.random.normal(0, noise_level/255.0, (*img.shape[:2], 1)).astype(np.float32)
+        seed = np.random.normal(0, noise_level / 255.0, (*img.shape[:2], 1)).astype(np.float32)
         img += img * seed
     else:
-        L = upper_level/255.
+        L = upper_level / 255.
         D = np.diag(np.random.rand(3))
-        U = orth(np.random.rand(3,3))
+        U = orth(np.random.rand(3, 3))
         conv = np.dot(np.dot(np.transpose(U), D), U)
-        seed = np.random.multivariate_normal([0,0,0], np.abs(L**2*conv), img.shape[:2]).astype(np.float32)
-        img += img*seed
+        seed = np.random.multivariate_normal([0, 0, 0], np.abs(L ** 2 * conv), img.shape[:2]).astype(np.float32)
+        img += img * seed
     img = np.clip(img, 0.0, 1.0)
     return (img * 255).astype(np.uint8), rnum, seed
 
@@ -138,27 +142,29 @@ def add_gauss_noise(img, lower_level=2, upper_level=25):
     noise_level = random.randint(lower_level, upper_level)
     img = img / 255
     rnum = np.random.rand()
-    if rnum > 0.6:   # add color Gaussian noise
+    if rnum > 0.6:  # add color Gaussian noise
         seed = np.random.normal(0, noise_level / 255.0, img.shape).astype(np.float32)
         img += seed
-    elif rnum < 0.4: # add grayscale Gaussian noise
+    elif rnum < 0.4:  # add grayscale Gaussian noise
         seed = np.random.normal(0, noise_level / 255.0, (*img.shape[:2], 1)).astype(np.float32)
         img += seed
-    else:            # add  noise
-        L = upper_level/255.
+    else:  # add  noise
+        L = upper_level / 255.
         D = np.diag(np.random.rand(3))
-        U = orth(np.random.rand(3,3))
+        U = orth(np.random.rand(3, 3))
         conv = np.dot(np.dot(np.transpose(U), D), U)
-        seed = np.random.multivariate_normal([0,0,0], np.abs(L**2*conv), img.shape[:2]).astype(np.float32)
+        seed = np.random.multivariate_normal([0, 0, 0], np.abs(L ** 2 * conv), img.shape[:2]).astype(np.float32)
         img += seed
     img = np.clip(img, 0.0, 1.0)
     return (img * 255).astype(np.uint8), rnum, seed
+
 
 def add_jpeg_noise(img):
     quality_factor = random.randint(10, 95)
     result, encimg = cv2.imencode('.jpg', img, [int(cv2.IMWRITE_JPEG_QUALITY), quality_factor])
     img = cv2.imdecode(encimg, 1)
     return img, quality_factor
+
 
 def add_webp_noise(img):
     quality_factor = random.randint(10, 95)
@@ -195,3 +201,16 @@ def zero_dce_exposure(net, target_img, target_exposure, device, threshold=0.97):
     low_light_img = target_img * scale * 255
     img_out = low_light_img.clip(0, 255).astype('uint8')
     return img_out
+
+
+def change_brightness(img, gamma) -> cv2.Mat:
+    if gamma < 0:
+        msg = "Invalid gamma supplied."
+        logging.error(msg)
+        raise ValueError(msg)
+
+    invGamma = 1.0 / gamma
+    table = np.array([((i / 255.0) ** invGamma) * 255 for i in np.arange(0, 256)]).astype("uint8")
+    output_img = cv2.LUT(img, table)
+    output_img = np.clip(output_img, 0.0, 255)
+    return output_img
