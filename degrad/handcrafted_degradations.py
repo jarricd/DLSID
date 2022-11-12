@@ -107,16 +107,15 @@ def add_poisson_noise(img, amp_factor=1):
         logging.error(msg)
         raise ValueError(msg)
 
-    img = img / 255  # convert to float
+    img_poi = img / 255  # convert to float
     poisson_seed = random.random()
     vals = np.power(10, amp_factor * poisson_seed)
-    img = (np.random.poisson(img * vals).astype(np.float32) / vals) * 255  # rescale to int again
-    img = img.astype(np.uint8)
-    return img, poisson_seed
+    img_poi = (np.random.poisson(np.clip((img_poi * vals), 0, 1)).astype(np.float32) / vals) * 255  # rescale to int again
+    img_poi = img_poi.astype(np.uint8)
+    return img_poi, poisson_seed
 
 
 def add_speckle_noise(img, lower_level=2, upper_level=25):
-    # speckle noise is like gauss noise except is black and white
     noise_level = random.randint(lower_level, upper_level)
     img = img / 255
     img = np.clip(img, 0.0, 1.0)
