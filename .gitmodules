@@ -4,3 +4,6 @@
 [submodule "IQA-PyTorch"]
 	path = IQA-PyTorch
 	url = https://github.com/chaofengc/IQA-PyTorch.git
+[submodule "BSRGAN"]
+	path = BSRGAN
+	url = https://github.com/cszn/BSRGAN.git
