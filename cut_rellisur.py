@@ -37,4 +37,4 @@ if __name__ == "__main__":
     for key, val in grouped_filenames.items():
         selected_file = random.choice(val)
         print(f"Moving file {selected_file}")
-        shutil.move(f"{lllr_path}\{selected_file}", f"{output_path}\{selected_file.split('-')[0]}.png")
+        shutil.move(f"{lllr_path}/{selected_file}", f"{output_path}/{selected_file.split('-')[0]}.png")

@@ -8,12 +8,14 @@ import sys
 import torch
 import quality.calculate
 import json
+import os
+import datetime
 from pathlib import Path
 from basicsr.archs.zerodce_arch import ConditionZeroDCE
 
 
 if __name__ == "__main__":
-    random.seed(2137)
+    random.seed(41)
     arg_parser = argparse.ArgumentParser(description="Generate LLLR images out of target dataset. This is the handcrafted model",
                                          epilog="This program does not have supercow powers.")
     arg_parser.add_argument("dset_path", help="Path of input dataset.")
@@ -66,9 +68,12 @@ if __name__ == "__main__":
         degraded_img = degrad.handcrafted_degradations.change_brightness(degraded_img, target_exposure)
         # degraded_img = degrad.handcrafted_degradations.zero_dce_exposure(net, degraded_img, target_exposure, device)
         applied_degradations.update({"exposure_decrease": target_exposure})
+        if degraded_img.shape[0] != degraded_img.shape[1]:
+            os.remove(str(target_img))
+            continue
 
         for iterations in range(0, degrad_count):
-            selected_degrad = random.randint(0, 7)
+            selected_degrad = random.randint(0, 6)
             if selected_degrad == 0:
                 degraded_img, poisson_seed = degrad.handcrafted_degradations.add_poisson_noise(degraded_img, args.noise_amp)
                 applied_degradations.update({"poisson_noise": {"noise_amp": args.noise_amp, "seed": poisson_seed}})
@@ -88,14 +93,14 @@ if __name__ == "__main__":
             elif selected_degrad == 4:
                 degraded_img, quality_comp = degrad.handcrafted_degradations.add_webp_noise(degraded_img)
                 applied_degradations.update({"web_noise": {"quality": quality_comp}})
+  #          elif selected_degrad == 5:
+#                degraded_img = degrad.handcrafted_degradations.downsample(degraded_img, 2, retain_size=True)
+ #               applied_degradations.update({"downsample": {"factor": 2, "retain_size": True}})
             elif selected_degrad == 5:
-                degraded_img = degrad.handcrafted_degradations.downsample(degraded_img, 2, retain_size=True)
-                applied_degradations.update({"downsample": {"factor": 2, "retain_size": True}})
-            elif selected_degrad == 6:
                 interpolation = random.randint(0, 6)
                 degraded_img = degrad.handcrafted_degradations.resize(degraded_img, 2, retain_size=True, interpolation=interpolation)
                 applied_degradations.update({"resize": {"factor": 2, "retain_size": True, "interpolation": interpolation}})
-            elif selected_degrad == 7:
+            elif selected_degrad == 6:
                 blur_type = blur_types[random.randint(0, len(blur_types)-1)]
                 kernel_size = random.randrange(1, 12, 2)
                 degraded_img = degrad.handcrafted_degradations.blur(degraded_img, (kernel_size, kernel_size), blur_type)
@@ -116,7 +121,7 @@ if __name__ == "__main__":
 
 
     output_json = json.dumps(scores)
-    with open("scores.json", "w+") as f:
+    with open(f"scores_{datetime.datetime.now()}.json", "w+") as f:
         f.write(output_json)
 
 
