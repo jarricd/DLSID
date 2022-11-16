@@ -117,7 +117,7 @@ if __name__ == "__main__":
         print("Calculating SSIM.")
         ssim_score = quality.calculate.ssim(original_img.astype("uint8"), degraded_img.astype("uint8"))
         print(f"SSIM score between original and degraded: {ssim_score}")
-        scores.update({str(target_img): {"ssim": ssim_score, "psnr": psnr_score, "degradations": applied_degradations}})
+        scores.update({f"{target_img.stem}{target_img.suffix}": {"ssim": ssim_score, "psnr": psnr_score, "degradations": applied_degradations}})
 
 
     output_json = json.dumps(scores)
