@@ -15,7 +15,6 @@ logging.basicConfig(level=logging.INFO, handlers=[
         logging.StreamHandler()
     ])
 
-
 def check_image_size(x, down_factor):
     _, _, h, w = x.size()
     mod_pad_h = (down_factor - h % down_factor) % down_factor
