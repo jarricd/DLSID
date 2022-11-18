@@ -23,7 +23,6 @@ if __name__ == "__main__":
             filtered_lines.append(log_line)
     filtered_lines = filtered_lines[0:]
     for log_line in filtered_lines:
-        # split on integers
         splitted_line = re.split('(\[.*\])', log_line)
         trimmed = [x.strip() for x in splitted_line]
         iter_num = int(re.split('(:)', splitted_line[1])[4].strip().replace(",", "")[:-3])
@@ -33,7 +32,7 @@ if __name__ == "__main__":
         l_percep = float(re.split('(:)', splitted_line[2])[6].split(" ")[1])
         l_side_percep = float(re.split('(:)', splitted_line[2])[8].split(" ")[1])
         value_dict.update({iter_num: {"lr": lr, "l_pix": l_pix, "l_side_pix": l_side_pix, "l_percep": l_percep, "l_side_percep": l_side_percep}})
-
+        # /\[epoch:(.*?), iter:(.*?), lr:\((.*?),\)\] \[(.*?)\] l_pix: (.*?) l_side_pix: (.*?) l_percep: (.*?) l_side_percep: (.*?)\n/gm
     with open(f"stats_{datetime.datetime.now()}.json", "w") as f:
         json_out = json.dumps(value_dict)
         f.write(json_out)
