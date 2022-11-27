@@ -37,7 +37,9 @@ if __name__ == "__main__":
     plt.suptitle("Learning rate change over iterations")
     plt.xlabel("Iteration num")
     plt.ylabel("Learning rate")
+    plt.savefig("lr.png")
     plt.show()
+
 
     plt.figure(figsize=(30, 10))
     plt.plot(x_iter_vals, l_pix)
@@ -45,7 +47,9 @@ if __name__ == "__main__":
     plt.suptitle("Pix loss over iterations")
     plt.xlabel("Iteration num")
     plt.ylabel("Pix loss")
+    plt.savefig("pix.png")
     plt.show()
+
 
     plt.figure(figsize=(30, 10))
     plt.plot(x_iter_vals, l_side_pix)
@@ -53,7 +57,9 @@ if __name__ == "__main__":
     plt.suptitle("Side pix loss over iterations")
     plt.xlabel("Iteration num")
     plt.ylabel("Side pix loss")
+    plt.savefig("side_pix.png")
     plt.show()
+
 
     plt.figure(figsize=(30, 10))
     plt.plot(x_iter_vals, l_percep)
@@ -61,6 +67,7 @@ if __name__ == "__main__":
     plt.suptitle("Percep loss over iterations")
     plt.xlabel("Iteration num")
     plt.ylabel("Percep loss")
+    plt.savefig("percep.png")
     plt.show()
 
     plt.figure(figsize=(30, 10))
@@ -69,6 +76,8 @@ if __name__ == "__main__":
     plt.suptitle("Side percep loss over iterations")
     plt.xlabel("Iteration num")
     plt.ylabel("Side percep loss")
+    plt.savefig("side_percep.png")
     plt.show()
 
     sys.exit(0)
+    
